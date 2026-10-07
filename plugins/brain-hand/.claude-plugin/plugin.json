@@ -1,0 +1,11 @@
+{
+  "name": "brain-hand",
+  "description": "Adversarial brain/hand review loop with a shared blackboard",
+  "version": "1.0.0",
+  "author": {
+    "name": "Shyam Sundhar Ganesh",
+    "email": "shyam.sundhar@voxket.ai"
+  },
+  "homepage": "https://github.com/shyamsundhar/claude-plugins",
+  "keywords": ["review", "audit", "quality", "multi-agent", "blackboard"]
+}

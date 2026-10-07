@@ -1,0 +1,20 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "shyam-claude-plugins",
+  "description": "Workflow plugins for Claude Code — adversarial review loops and engineering standards.",
+  "owner": {
+    "name": "Shyam Sundhar Ganesh",
+    "email": "shyam.sundhar@voxket.ai"
+  },
+  "plugins": [
+    {
+      "name": "brain-hand",
+      "description": "Run work through two adversarial agents — a read-only brain that specs and judges, and a hand that builds — arguing until one is genuinely convinced, with a shared blackboard so nothing is re-derived. For work where 'it ran without errors' is not the same as 'it does the job'.",
+      "author": {
+        "name": "Shyam Sundhar Ganesh"
+      },
+      "category": "workflow",
+      "source": "./plugins/brain-hand"
+    }
+  ]
+}
