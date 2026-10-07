@@ -5,11 +5,11 @@ Workflow plugins for [Claude Code](https://claude.com/claude-code).
 ## Install
 
 ```bash
-/plugin marketplace add shyamsundhar/claude-plugins
+/plugin marketplace add ShyamSundhar1411/claude-plugins
 /plugin install brain-hand@shyam-claude-plugins
 ```
 
-Replace `shyamsundhar/claude-plugins` with wherever you host this repo.
+Then restart Claude Code, or run `/plugin` to browse what the marketplace offers.
 
 ## Plugins
 
@@ -31,6 +31,20 @@ round rather than the knowledge.
 
 Use it when quality matters more than speed: building to a standard, auditing, reviewing — any
 task where "it ran without errors" is not the same as "it does the job".
+
+**Why this and not an existing plugin.** The insight that a separate adversarial verifier
+catches what self-verification misses is not new — Anthropic's `math-proof:siege` runs rounds
+of judge and worker sub-agents, `math-olympiad` attacks proofs with fresh-context verifiers,
+and `code-review` scores PR findings across multiple agents. Each is excellent and each is
+domain-locked: proofs, competition maths, pull requests.
+
+`brain-hand` differs in three ways. It is **domain-general** — the brain wears whatever hat the
+job needs, and the spec is written before anything is built rather than derived from the
+artifact afterwards. Conviction runs **both directions**: the loop also ends when the hand
+convinces the brain that its own requirement was wrong, which a one-way verifier cannot do.
+And the **blackboard** persists findings, pre-verified checks and withdrawn requirements across
+rounds, so a long run does not re-derive itself and an agent lost to a rate limit costs the
+round rather than the knowledge.
 
 ## Repository layout
 
