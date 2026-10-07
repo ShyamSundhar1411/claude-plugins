@@ -1,4 +1,4 @@
-# shyam-claude-plugins
+# claude-plugins
 
 Workflow plugins for [Claude Code](https://claude.com/claude-code).
 
@@ -6,7 +6,7 @@ Workflow plugins for [Claude Code](https://claude.com/claude-code).
 
 ```bash
 /plugin marketplace add ShyamSundhar1411/claude-plugins
-/plugin install brain-hand@shyam-claude-plugins
+/plugin install brain-hand@claude-plugins
 ```
 
 Then restart Claude Code, or run `/plugin` to browse what the marketplace offers.
