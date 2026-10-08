@@ -17,11 +17,31 @@ So for work with both a logical substrate and a human-facing surface, split the 
 | --- | --- | --- |
 | Judges | Does it work, and is it true? | Is it good to use, read, or look at? |
 | Hat | Architect, data analyst, security reviewer, editor-of-fact | Designer, UX critic, copy chief, art director |
+| Handles | Language as *content* — the claim, the logic, the arithmetic, the sequence | Language as *tone* — how it sounds, what it implies, whether it condescends or lands; and everything spatial and visual |
 | Asks | Does the evidence support the claim? Does the structure hold? Is anything asserted that was not measured? | Can the person in front of this understand it? Is it cramped, cold, confusing, ugly? Does it respect them? |
-| Rejects when | A conclusion is unsupported, a boundary leaks, a number is wrong | A person cannot act on it, the hierarchy misleads, the thing is unpleasant or exhausting to use |
+| Rejects when | A conclusion is unsupported, a boundary leaks, a number is wrong | A person cannot act on it, the hierarchy misleads, the wording is patronising or evasive, the thing is unpleasant to use |
 | Evidence it brings | Reproductions, failing cases, queries, greps, test runs | Screenshots at real sizes, the smallest screen, the largest text, a walk through the actual flow |
 
 Both are read-only. Both can reject. Neither can edit.
+
+The division of *language* is the one people get wrong. Both hemispheres handle words. Left owns
+what a sentence **claims** — is it supported, is the arithmetic right, does the argument follow.
+Right owns what it **sounds like** — whether a caveat reads as honest or as a brush-off, whether
+an error message blames the user, whether a refusal respects them. A suppression reason that is
+factually correct and reads as a shrug passes left and fails right, and right is right to fail it.
+
+## The corpus callosum
+
+Two specialists that must still work on almost everything together need a bridge, or they
+fragment. The blackboard is that bridge, and when you split the brain it stops being a
+convenience and becomes structural: it is the only channel through which the hemispheres share
+context, because they deliberately do not read each other's criteria.
+
+So with a split brain, the board is not optional. Left posts the spec and the surface it is
+delegating; right posts its experience criteria; the hand posts findings both will need; the
+referee posts what it has already verified for both. Severed, you get two reviewers judging
+different things with no shared picture of the work — which is worse than one reviewer, not
+better.
 
 ## How they coordinate
 
@@ -96,7 +116,7 @@ second opinion rather than an echo. Name the surface and what it is for, and sto
 **Right, spec phase:**
 
 ```
-You are the RIGHT hemisphere of a brain/hand loop, and you are READ-ONLY.
+You are the RIGHT hemisphere of a crucible loop, and you are READ-ONLY.
 
 Your hat: <designer / UX critic / copy chief>. You judge one thing — whether the person in
 front of this can use it, read it, and act on it without being confused, cramped or patronised.

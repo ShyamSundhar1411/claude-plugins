@@ -1,20 +1,20 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "claude-plugins",
-  "description": "Workflow plugins for Claude Code — adversarial review loops and engineering standards.",
+  "description": "Workflow plugins for Claude Code \u2014 adversarial review loops and engineering standards.",
   "owner": {
     "name": "Shyam Sundhar Ganesh",
     "email": "shyam.sundhar@voxket.ai"
   },
   "plugins": [
     {
-      "name": "brain-hand",
-      "description": "Run work through two adversarial agents — a read-only brain that specs and judges, and a hand that builds — arguing until one is genuinely convinced, with a shared blackboard so nothing is re-derived. For work where 'it ran without errors' is not the same as 'it does the job'.",
+      "name": "crucible",
+      "description": "A crucible does not make the thing; it applies enough heat that only what survives comes out. Splits building from judging across adversarial agents that can each overrule the other, coordinating through a shared board. The brain optionally splits into a left hemisphere judging correctness and a right judging whether a person can actually use the result.",
       "author": {
         "name": "Shyam Sundhar Ganesh"
       },
       "category": "workflow",
-      "source": "./plugins/brain-hand"
+      "source": "./plugins/crucible"
     }
   ]
 }

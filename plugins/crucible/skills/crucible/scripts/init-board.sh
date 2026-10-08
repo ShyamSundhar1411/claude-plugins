@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Scaffold a brain/hand blackboard.
+# Scaffold a crucible blackboard — the corpus callosum between the agents.
 #
-#   ./init-board.sh <dir>        # e.g. "$SCRATCHPAD/brain-hand"
+#   ./init-board.sh <dir>        # e.g. "$SCRATCHPAD/crucible"
 #
 # The board is how the brain, the hand and the referee avoid re-deriving each
 # other's work. Every agent reads it before starting and posts to it before

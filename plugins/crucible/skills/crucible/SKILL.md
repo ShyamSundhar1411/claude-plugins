@@ -1,13 +1,22 @@
 ---
-name: brain-hand
+name: crucible
 description: 'Run work through adversarial agents — a read-only "brain" that specs and judges, and a "hand" that builds — arguing until one is genuinely convinced, coordinating through a shared blackboard so nothing is re-derived. The brain can split into a left hemisphere judging whether the work is correct and a right hemisphere judging whether a person can actually use it, for anything with both logic and a visual or written surface. Use this whenever quality matters more than speed and a single agent would mark its own homework: building something to a standard (dashboards, reports, UIs, APIs, docs), auditing or reviewing work, or any task where "it ran without errors" is not the same as "it does the job". Reach for this when the user says review, critique, audit, get a second opinion, get it right, make it actually good, check the design, or have something verify this — and also when you notice you are about to both build and approve the same thing.'
 ---
 
-# Brain and Hand
+# Crucible
 
 One agent building and then declaring its own work good is the single most common way agentic work ships broken. The agent that built it is the worst possible judge of it: it knows what it *meant*, it is invested in being finished, and it will read its own output charitably.
 
-This skill splits those jobs between two agents who can each overrule the other, and lets them argue until one is actually convinced.
+A crucible does not make the thing. It applies enough heat that only what can survive comes out. This skill is that vessel: it splits building from judging across agents who can each overrule the other, and lets them argue until one is actually convinced.
+
+```
+crucible
+ ├─ brain            read-only. specs the work, and is the only thing that can accept it
+ │   ├─ left         judges whether it is correct and true
+ │   └─ right        judges whether a person can actually use it      (optional split)
+ ├─ the board        the only channel between them — findings, verdicts, what is already checked
+ └─ hand             builds. may argue, may never declare itself finished
+```
 
 ## The roles
 
@@ -40,7 +49,7 @@ Agents in this loop are expensive and forgetful. Without a shared place to put t
 So the loop keeps a **blackboard**: a directory of append-only notes that every agent reads before it starts and posts to before it stops. It is the same move as a shared workspace in any multi-agent architecture — agents coordinate through the board rather than by being handed ever-longer prompts.
 
 ```
-<scratchpad>/brain-hand/
+<scratchpad>/crucible/
   spec.md         the brain's spec and acceptance criteria — written once, read by everyone
   skills.md       what skills are installed, so a hand reuses rather than rebuilds
   findings.md     facts discovered the hard way: env quirks, file locations, API shapes

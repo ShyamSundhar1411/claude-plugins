@@ -1,24 +1,25 @@
-# brain-hand
+# crucible
 
 An agent that builds something and then declares it good is the worst possible judge of it. It
 knows what it *meant*, it is invested in being finished, and it reads its own output
 charitably. Self-approval is the most common way agentic work ships broken.
 
-`brain-hand` splits those two jobs across agents that can each overrule the other, and makes
-them argue until one is genuinely convinced.
+A crucible does not make the thing. It applies enough heat that only what can survive comes out.
+`crucible` is that vessel: it splits building from judging across agents that can each overrule
+the other, and makes them argue until one is genuinely convinced.
 
 ## Installation
 
 ```
 /plugin marketplace add ShyamSundhar1411/claude-plugins
-/plugin install brain-hand@claude-plugins
+/plugin install crucible@claude-plugins
 /reload-plugins
 ```
 
 The skill triggers on its own when a task calls for it. You can also invoke it directly:
 
 ```
-/brain-hand audit the payment reconciliation job before we ship it
+/crucible audit the payment reconciliation job before we ship it
 ```
 
 ## The three roles
@@ -104,7 +105,7 @@ This is an extra agent per round, so it is opt-in. Reach for it when both halves
 getting either wrong is expensive. Skip it when there is no human-facing surface — a right
 hemisphere with nothing to look at will invent something to review.
 
-Full detail in [`references/hemispheres.md`](skills/brain-hand/references/hemispheres.md).
+Full detail in [`references/hemispheres.md`](skills/crucible/references/hemispheres.md).
 
 ## When to use it
 
@@ -134,7 +135,7 @@ attacks proofs with fresh-context verifiers, and `code-review` scores pull-reque
 across several agents. Each is good, and each is domain-locked — proofs, competition
 mathematics, pull requests.
 
-`brain-hand` differs in three ways:
+`crucible` differs in three ways:
 
 - **Domain-general.** The brain wears whatever hat the work needs, and the spec is written
   before anything is built rather than reverse-engineered from the artifact afterwards.
@@ -145,7 +146,7 @@ mathematics, pull requests.
 
 ## Maturity
 
-Version 1.1.0. Honest status:
+Version 1.2.0. Honest status:
 
 - The loop itself has been run end to end on a production-sized project and found defects a
   single agent did not: a citation path that would have silently promoted suppressed records,
@@ -164,7 +165,7 @@ Version 1.1.0. Honest status:
 ## Contents
 
 ```
-skills/brain-hand/
+skills/crucible/
   SKILL.md                    the loop, the board, the hazards
   references/prompts.md       templates for the four prompts a run needs
   references/hemispheres.md   the left/right split for work with a human-facing surface
