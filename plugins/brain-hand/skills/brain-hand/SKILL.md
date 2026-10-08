@@ -1,6 +1,6 @@
 ---
 name: brain-hand
-description: 'Run work through two adversarial agents — a read-only "brain" that specs and judges, and a "hand" that builds — arguing until one is genuinely convinced, with a shared blackboard so nothing is re-derived. Use this whenever quality matters more than speed and a single agent would mark its own homework: building something to a standard (dashboards, reports, UIs, APIs, docs), auditing or reviewing work, or any task where "it ran without errors" is not the same as "it does the job". Reach for this when the user says review, critique, audit, get it right, make it actually good, have something check it, or describes wanting a second opinion — and also when you notice you are about to both build and approve the same thing.'
+description: 'Run work through adversarial agents — a read-only "brain" that specs and judges, and a "hand" that builds — arguing until one is genuinely convinced, coordinating through a shared blackboard so nothing is re-derived. The brain can split into a left hemisphere judging whether the work is correct and a right hemisphere judging whether a person can actually use it, for anything with both logic and a visual or written surface. Use this whenever quality matters more than speed and a single agent would mark its own homework: building something to a standard (dashboards, reports, UIs, APIs, docs), auditing or reviewing work, or any task where "it ran without errors" is not the same as "it does the job". Reach for this when the user says review, critique, audit, get a second opinion, get it right, make it actually good, check the design, or have something verify this — and also when you notice you are about to both build and approve the same thing.'
 ---
 
 # Brain and Hand
@@ -42,6 +42,7 @@ So the loop keeps a **blackboard**: a directory of append-only notes that every 
 ```
 <scratchpad>/brain-hand/
   spec.md         the brain's spec and acceptance criteria — written once, read by everyone
+  skills.md       what skills are installed, so a hand reuses rather than rebuilds
   findings.md     facts discovered the hard way: env quirks, file locations, API shapes
   verified.md     what the referee has already checked, with the command and the result
   deviations.md   what the hand could not do, and why
@@ -56,6 +57,7 @@ Run `scripts/init-board.sh <dir>` to scaffold it, or just create the files.
 - **Read the board first.** Every prompt you write — brain, hand, judge — starts with "read `<board>/` before you begin." An agent that already knows the toolchain gotcha does not spend twenty minutes rediscovering it.
 - **`findings.md` is for facts that cost something to learn.** *"The standalone toolchain on PATH shadows the IDE's and fails with a misleading missing-type error; prefix commands with the explicit path"* saves the next agent an hour. *"The project uses SwiftUI"* saves nothing. Tell agents to post the former and skip the latter.
 - **`verified.md` is the referee's channel, and it is where the real savings are.** You can check a claim far more cheaply than a judge agent can. Run the test suite, run the greps, diff the file — then post the result and tell the judge *"pre-verified, do not re-run."* A judge that re-derives what you already know is paying full price for a fact you own.
+- **`skills.md` is yours to post, and only you can.** Subagents cannot see the session's skill roster; you can. A hand that does not know a `dataviz` or a `pdf` or a house-standards skill exists will rebuild what it does, worse. At init, list the handful that a hand on *this* job might reach for — not the whole roster, which is a reading tax. This is how the loop composes with everything else the user has installed instead of reinventing it.
 - **Tag a finding with what it applies to.** A board accumulates findings from every part of a system, and an agent working on one part pays reading cost for all of them. Lead each entry with its scope — `[backend/python]`, `[ios build]` — so an agent can skip what cannot apply to it. Untagged, a board of thirty findings is a tax, not an asset.
 - **Post before you stop.** An agent that dies with its findings in its head leaves nothing. One that posted as it went leaves a working trail.
 - **The board is append-only and attributed.** Who claimed it, and when. A finding that later turns out wrong gets a correction entry, not a silent edit — the next agent needs to see it was contested.
@@ -128,7 +130,12 @@ Keep rounds sequential when they share files, and parallel only when the file se
 
 Tell hands to read narrowly, too: ranges over whole files when they only need a region, and no re-reading what they have already seen. Re-reading large files is where a hand's budget quietly goes.
 
-When the domain is deep enough that the brain would need a glossary to judge the hand's output, put a domain specialist between them instead of relying on hat discipline — `references/specialist.md` has that variant.
+Two variants, each in `references/`, to read when the job calls for them:
+
+- **`hemispheres.md`** — split the brain in two when the work has both a logical substrate and a human-facing surface. **Left** judges whether it works and is true; **right** judges whether a person can use it. One reviewer doing both does the first well and the second as an afterthought: the reviewer deep in correctness does not notice a heading breaking mid-word, and the one reading as a person does not notice a record citing data it was forbidden to see. Left writes the spec and delegates the surface; neither reads the other's criteria before writing, or you get agreement instead of a second opinion.
+- **`specialist.md`** — put a domain expert *between* brain and hand when the gap between what the business wants and what the code does is wide enough that the brain would need a glossary. The brain then never sees code, so hat drift becomes structurally impossible rather than a rule someone has to remember.
+
+Both cost an extra agent per round. Default to one brain and reach for these when the specific risk they address is real.
 
 ## Writing the prompts
 

@@ -72,6 +72,22 @@ brain withdrew but nobody wrote down comes back next round and gets argued again
 
 _empty_"
 
+write skills.md "# Skills available in this session
+
+The referee posts this at init: one line per installed skill, name and what it is for.
+
+Agents cannot see each other's skill rosters, and a hand that does not know a skill exists
+rebuilds what it already does — chart code, document generation, a review checklist someone
+already wrote down. One line here is cheaper than a rediscovery.
+
+Keep it to skills a hand on THIS job could plausibly reach for. A full roster of forty is a
+reading tax; the five that might apply are an asset.
+
+Format:
+  - \`<name>\` — what it does, and when to reach for it
+
+_empty — posted by the referee_"
+
 write backlog.md "# Backlog
 
 Real defects that do not block acceptance. The brain files them here instead of

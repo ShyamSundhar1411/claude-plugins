@@ -63,6 +63,7 @@ before stopping:
 | File | Written by | Why it exists |
 | --- | --- | --- |
 | `spec.md` | Brain, once | So a resume never has to re-send it |
+| `skills.md` | Referee | What else is installed. Subagents cannot see the session's skill roster, so a hand that does not know a charting or document skill exists rebuilds what it does, worse |
 | `findings.md` | Hands | Facts that cost real time to learn — toolchain traps, non-obvious locations, commands that look right and silently do nothing |
 | `verified.md` | **Referee** | What has already been checked, with the command and its output. The judge is told: do not re-run these |
 | `deviations.md` | Hand | What it could not do, and where it thinks the spec is wrong |
@@ -80,6 +81,30 @@ the one useful entry saved a two-minute lookup, and the detailed entries describ
 system that task never touched. The board earns its keep from round two onward, and most of all
 across an interrupted agent, where the alternative is the next one rediscovering what the dead
 one already knew. For a single-round job, skip it and brief the agents directly.
+
+## Splitting the brain
+
+One reviewer judging both whether a thing *works* and whether it is *good to use* does the
+first well and the second as an afterthought. For work with both a logical substrate and a
+human-facing surface, the brain splits in two:
+
+| | **Left** | **Right** |
+| --- | --- | --- |
+| Judges | Does it work, and is it true? | Can a person actually use it? |
+| Hat | Architect, analyst, security reviewer | Designer, UX critic, copy chief |
+| Rejects when | A conclusion is unsupported, a boundary leaks, a number is wrong | The hierarchy misleads, the thing is cramped, a person cannot act on it |
+| Evidence | Reproductions, failing cases, test runs | Screenshots at the smallest width and the largest text size |
+
+Left writes the spec and delegates the surface. Neither reads the other's criteria before
+writing — otherwise right agrees with left instead of giving a second opinion. Left integrates
+the verdict but cannot overrule right inside right's domain: an unusable screen is a blocker
+even when every correctness criterion passes.
+
+This is an extra agent per round, so it is opt-in. Reach for it when both halves matter and
+getting either wrong is expensive. Skip it when there is no human-facing surface — a right
+hemisphere with nothing to look at will invent something to review.
+
+Full detail in [`references/hemispheres.md`](skills/brain-hand/references/hemispheres.md).
 
 ## When to use it
 
@@ -120,7 +145,7 @@ mathematics, pull requests.
 
 ## Maturity
 
-Version 1.0.0. Honest status:
+Version 1.1.0. Honest status:
 
 - The loop itself has been run end to end on a production-sized project and found defects a
   single agent did not: a citation path that would have silently promoted suppressed records,
@@ -129,6 +154,10 @@ Version 1.0.0. Honest status:
   the judge was argued out of its own requirement.
 - That evidence comes from **one** project with one person as referee. It has not been
   validated across domains or operators.
+- The blackboard was smoke-tested on a real round and reported back as mostly ceremony for a
+  first round — see the note above. The hemisphere split formalises something that worked in
+  practice (separate architecture and design reviewers finding disjoint classes of defect) but
+  has not been run under this skill's own prompts.
 - There is no automated eval suite. Benchmarking it means spawning real loops, which is
   expensive; contributions welcome.
 
@@ -136,10 +165,11 @@ Version 1.0.0. Honest status:
 
 ```
 skills/brain-hand/
-  SKILL.md                  the loop, the board, the hazards
-  references/prompts.md     templates for the four prompts a run needs
-  references/specialist.md  the three-layer variant for deep domains
-  scripts/init-board.sh     scaffolds a blackboard
+  SKILL.md                    the loop, the board, the hazards
+  references/prompts.md       templates for the four prompts a run needs
+  references/hemispheres.md   the left/right split for work with a human-facing surface
+  references/specialist.md    the three-layer variant for deep domains
+  scripts/init-board.sh       scaffolds a blackboard
 ```
 
 ## License
