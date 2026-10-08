@@ -1,4 +1,4 @@
-# claude-plugins
+# Axion Labs — Claude Code plugins
 
 Workflow plugins for [Claude Code](https://claude.com/claude-code).
 
@@ -6,7 +6,7 @@ Workflow plugins for [Claude Code](https://claude.com/claude-code).
 
 ```
 /plugin marketplace add ShyamSundhar1411/claude-plugins
-/plugin install crucible@shyam-plugins
+/plugin install crucible@axion-labs
 /reload-plugins
 ```
 

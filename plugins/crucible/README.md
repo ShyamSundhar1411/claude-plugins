@@ -12,7 +12,7 @@ the other, and makes them argue until one is genuinely convinced.
 
 ```
 /plugin marketplace add ShyamSundhar1411/claude-plugins
-/plugin install crucible@shyam-plugins
+/plugin install crucible@axion-labs
 /reload-plugins
 ```
 

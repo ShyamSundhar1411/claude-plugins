@@ -1,9 +1,9 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
-  "name": "shyam-plugins",
+  "name": "axion-labs",
   "description": "Workflow plugins for Claude Code \u2014 adversarial review loops and engineering standards.",
   "owner": {
-    "name": "Shyam Sundhar Ganesh",
+    "name": "Axion Labs",
     "email": "shyam.sundhar@voxket.ai"
   },
   "plugins": [
