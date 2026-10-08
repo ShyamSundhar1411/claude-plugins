@@ -6,7 +6,7 @@ Workflow plugins for [Claude Code](https://claude.com/claude-code).
 
 ```
 /plugin marketplace add ShyamSundhar1411/claude-plugins
-/plugin install crucible@claude-plugins
+/plugin install crucible@shyam-plugins
 /reload-plugins
 ```
 
