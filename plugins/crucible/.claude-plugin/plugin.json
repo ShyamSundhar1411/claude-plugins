@@ -1,7 +1,7 @@
 {
   "name": "crucible",
   "description": "Adversarial build-and-judge loop: a read-only brain specs and accepts, a hand builds, neither can do the other job",
-  "version": "1.2.0",
+  "version": "1.2.2",
   "author": {
     "name": "Shyam Sundhar Ganesh",
     "email": "shyam.sundhar@voxket.ai"

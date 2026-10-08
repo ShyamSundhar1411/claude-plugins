@@ -146,7 +146,7 @@ mathematics, pull requests.
 
 ## Maturity
 
-Version 1.2.0. Honest status:
+Version 1.2.2. Honest status:
 
 - The loop itself has been run end to end on a production-sized project and found defects a
   single agent did not: a citation path that would have silently promoted suppressed records,
