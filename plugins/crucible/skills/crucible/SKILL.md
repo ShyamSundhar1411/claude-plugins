@@ -129,6 +129,39 @@ Without it you get compliant checklist-ticking. With it, a brain will accept nin
 
 That failure mode — passes the spec, misses the point — is exactly what a single agent never catches.
 
+## Before you spawn: the four lines
+
+The guidance below is easy to agree with and easy to skip, because skipping it is
+never what fails — the agent still returns good work, just at four times the price.
+So make it mechanical. Every brief you write, brain or hand, opens with four lines:
+
+```
+Board:        <path>/ — read it first. verified.md is pre-checked; do not re-derive.
+Scope:        these files / this directory. Nothing else without saying why.
+Skills:       <the installed skills this job should reach for, by name>
+Already true: <the two or three facts you checked yourself>
+Don't:        re-read what is quoted below; re-verify anything in verified.md.
+```
+
+If you cannot fill `Already true`, you have not done the referee's job yet — and the
+agent is about to pay full price for facts you could have established in one grep.
+
+`Skills` is the line most often left empty, and it is the one an agent cannot fix for
+itself: **subagents cannot see the session's skill roster.** A hand that does not know a
+house-standards skill exists will reconstruct its rules from a style guide, badly, every
+round. If you find yourself writing "read the coding standard and match the surrounding
+code", stop — that is usually a skill you already have, and naming it is one line.
+
+**Closed briefs are cheap; open ones are not.** "Investigate X and decide" licenses
+an agent to read the whole repo. "Do X in these files; Y is already verified; report
+what you could not do" does not. The same work, scoped two ways, differs by an order
+of magnitude — and the open version is not more thorough, it is just less directed.
+
+**Watch for the tell.** An agent that returns having explored files you never named,
+or that re-establishes something already on the board, did not waste its own budget —
+your brief did. That is a defect in the brief, not the agent, and it repeats on every
+round until the brief changes.
+
 ## Sizing a round
 
 Long single agents are fragile. They hit context limits, rate limits and timeouts, and every death costs restart overhead even with a good board.
@@ -138,6 +171,13 @@ Long single agents are fragile. They hit context limits, rate limits and timeout
 Keep rounds sequential when they share files, and parallel only when the file sets are provably disjoint. A read-only brain can always run alongside a writing hand.
 
 Tell hands to read narrowly, too: ranges over whole files when they only need a region, and no re-reading what they have already seen. Re-reading large files is where a hand's budget quietly goes.
+
+**Expect a round to cost what a round costs.** A scoped hand with a good board lands
+well under a session window; one that doubles that is usually re-reading, not building.
+Verification sweeps are the honest exception — harvesting every query a product issues
+and diffing three revisions is expensive because the question is expensive, and that is
+the kind of spend worth paying for. The waste to hunt is the cheap kind: five agents
+each independently discovering the same build quirk.
 
 Two variants, each in `references/`, to read when the job calls for them:
 

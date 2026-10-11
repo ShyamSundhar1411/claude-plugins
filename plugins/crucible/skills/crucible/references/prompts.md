@@ -4,6 +4,20 @@ Four prompts carry a run. Adapt the wording; keep the load-bearing parts, which 
 
 `<board>` is the blackboard directory. Every prompt opens by pointing at it.
 
+**Every prompt also opens with the four lines**, before its role text. They are what keep a
+round from costing four times what it should:
+
+```
+Board:        <board>/ — read it first. verified.md is pre-checked; do not re-derive.
+Scope:        <the files or directories this agent may touch>
+Skills:       <installed skills this job should use, by name — it cannot discover them>
+Already true: <facts the referee checked, so nobody pays to establish them twice>
+Don't:        re-read what is quoted below; re-verify anything in verified.md.
+```
+
+An empty `Already true` means the referee has not done their half yet. An empty `Skills`
+usually means a hand is about to rebuild something you already have installed.
+
 ---
 
 ## 1. Brain — spec phase
