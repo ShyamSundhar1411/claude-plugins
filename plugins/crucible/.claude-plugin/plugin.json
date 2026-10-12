@@ -1,7 +1,7 @@
 {
   "name": "crucible",
-  "description": "Adversarial build-and-judge loop: a read-only brain specs and accepts, a hand builds, neither can do the other job",
-  "version": "1.2.3",
+  "description": "Adversarial build-and-judge loop with a structurally read-only judge: the brain cannot edit what it judges, the hand cannot approve its own work, and the judge records the requirements it withdrew when the builder proved it wrong",
+  "version": "1.3.0",
   "author": {
     "name": "Shyam Sundhar Ganesh",
     "email": "shyam.sundhar@voxket.ai"
@@ -14,6 +14,9 @@
     "multi-agent",
     "blackboard",
     "design-review",
-    "second-opinion"
+    "second-opinion",
+    "mutation-testing",
+    "adversarial",
+    "code-review"
   ]
 }

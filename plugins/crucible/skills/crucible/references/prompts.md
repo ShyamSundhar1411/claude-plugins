@@ -2,7 +2,25 @@
 
 Four prompts carry a run. Adapt the wording; keep the load-bearing parts, which are marked.
 
-`<board>` is the blackboard directory. Every prompt opens by pointing at it.
+`<board>` is the blackboard directory — `<repo>/.crucible`, committed, never a temp path.
+
+**Every brief opens with the same six lines, before any role text.** They are mechanical on
+purpose: the two that get skipped are the two an agent cannot fix for itself.
+
+```
+Board:        <repo>/.crucible/ — read it first. verified.md is pre-checked; do not re-derive.
+Scope:        these files / this directory. Nothing else without saying why.
+Skills:       <installed skills this job should reach for, by name>
+Already true: <the two or three facts you checked yourself>
+Budget:       <model, and what to do if the window runs short>
+Don't:        re-read what is quoted below; re-verify anything in verified.md.
+```
+
+An empty `Already true` means the referee has not done its half yet. An empty `Skills` usually
+means an agent is about to rebuild something already installed — **subagents cannot see the
+session's skill roster, only you can.** One real run omitted it from a judge's brief and the
+judge hand-recomputed fourteen contrast ratios because it could not find the validator a named
+skill would have handed it.
 
 **Every prompt also opens with the four lines**, before its role text. They are what keep a
 round from costing four times what it should:
@@ -22,8 +40,10 @@ usually means a hand is about to rebuild something you already have installed.
 
 ## 1. Brain — spec phase
 
-Give it to a **read-only** agent type. If your harness has a planning or exploration agent that
-cannot write files, use that; the restriction is the point, not a formality.
+Use the **`crucible-brain`** agent this plugin ships — its tool list has no `Edit`, `Write` or
+`NotebookEdit`, so the restriction is structural rather than a request. Spawning a
+general-purpose agent and asking it nicely to stay read-only is the old way, and it fails
+silently the first time the agent decides a one-line fix would be helpful.
 
 ```
 You are the BRAIN in a crucible loop. You are READ-ONLY: do not edit, write or create any
@@ -98,6 +118,12 @@ locally and must therefore be designed for injection>
 <dependency direction, single responsibility, no duplicated logic, reuse before creating,
 composition over global state, domain-language names, comments explain why, delete what you
 replace>
+
+## EVIDENCE YOU MUST PRODUCE (the judge rules from artifacts, not your description)
+<the rendered output a judge will need: screenshots at real sizes, the smallest supported width,
+the largest accessibility text size, dark mode, empty / error / many-item states. Say where to
+save them.> List the paths in your report. If you cannot produce one, say so plainly and name
+the criteria that are therefore unverifiable — do not describe an artifact you did not make.
 
 ## HOW TO REPORT BACK
 1. What you built, file by file, and what you deleted.

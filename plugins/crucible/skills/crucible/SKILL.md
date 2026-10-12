@@ -26,6 +26,14 @@ crucible
 
 **Referee** — you, the main session. Carry verdicts between them, hold the bar, keep the blackboard honest, commit accepted work, and break deadlocks.
 
+**Use the agents this plugin ships.** `crucible-brain` has no `Edit`, `Write` or `NotebookEdit`
+in its tool list, so the read-only guarantee is structural rather than something you have to
+remember. `crucible-hand` has the full set plus an evidence duty. Spawning a general-purpose
+agent and *asking* it to behave read-only is the old way and it fails silently.
+
+`crucible-brain` does keep `Bash`, because a judge that cannot run the thing cannot judge it —
+that is the one hole in the wall, and its prompt forbids writing through it.
+
 ## The three rules that make it work
 
 Everything else is detail. These are load-bearing:
@@ -49,7 +57,7 @@ Agents in this loop are expensive and forgetful. Without a shared place to put t
 So the loop keeps a **blackboard**: a directory of append-only notes that every agent reads before it starts and posts to before it stops. It is the same move as a shared workspace in any multi-agent architecture — agents coordinate through the board rather than by being handed ever-longer prompts.
 
 ```
-<scratchpad>/crucible/
+<repo>/.crucible/          ← IN THE REPO. Commit it.
   spec.md         the brain's spec and acceptance criteria — written once, read by everyone
   skills.md       what skills are installed, so a hand reuses rather than rebuilds
   findings.md     facts discovered the hard way: env quirks, file locations, API shapes
@@ -59,7 +67,13 @@ So the loop keeps a **blackboard**: a directory of append-only notes that every 
   backlog.md      real defects, deliberately deferred
 ```
 
-Run `scripts/init-board.sh <dir>` to scaffold it, or just create the files.
+Run `scripts/init-board.sh` to scaffold it (defaults to `<repo>/.crucible`), or just create the files.
+
+**Put the board in the repo and commit it.** Earlier versions of this skill suggested a session
+scratchpad. On a real run that resolved to a temp directory, the OS reaped it across a multi-day
+gap, and it took both specs, all ninety acceptance criteria, every ruling — and the backup
+tarball that had been helpfully stored beside it. The run survived only because the main session
+still held its transcript. A board that does not outlive the machine's tmp policy is not a board.
 
 **The rules that make the board pay for itself:**
 
@@ -102,6 +116,14 @@ Brain: read board → verify independently → ACCEPT or REVISE → post to verd
 The brain must *use* the thing, not look at it. Its best findings come from interacting — following a number to the record it rests on, running the query, booting the app, curling the endpoint. Tell it to verify claims **itself** rather than trusting the hand's report. A report is a claim, not evidence.
 
 The sharpest version of this is **reproducing the failure**. A brain that writes "this could cite a record it was forbidden to see" has an opinion; one that pastes the two-line output showing it happening has a blocker nobody can argue with. Ask for that.
+
+**The corollary is an evidence duty on the hand.** A judge cannot rule on a surface it was not
+shown, and "unverified" is a worse outcome than "failed". So whenever a judge will have to *look*
+at something, the hand's brief must require it to produce the artifacts — screenshots at real
+sizes, the smallest width, the largest text, dark mode, the empty and error and
+two-hundred-item states — and list their paths in its report. The referee should refuse to launch
+the judge without them. In one real run the hand died before capturing anything and the referee
+had to shoot all 38 screenshots itself before the design critic could rule at all.
 
 The same applies to tests: a brain that mutation-tests a claim — break the thing the test covers, confirm the test fails — can tell a real test from one that passes vacuously. Worth asking for whenever a round's headline evidence is "and I added tests".
 
@@ -179,7 +201,13 @@ and diffing three revisions is expensive because the question is expensive, and 
 the kind of spend worth paying for. The waste to hunt is the cheap kind: five agents
 each independently discovering the same build quirk.
 
-Two variants, each in `references/`, to read when the job calls for them:
+Three references, each in `references/`, to read when the job calls for them:
+
+- **`seam.md`** — read this whenever the work crosses a boundary no single judge owns: two
+  services, a producer and a renderer, anything where one side's unit of truth is larger than the
+  other side's unit of display. **Split the brain and you create a boundary, and some defects live
+  on it** — each hemisphere individually correct, the product broken. One question per round from
+  the referee, no extra agent.
 
 - **`hemispheres.md`** — split the brain in two when the work has both a logical substrate and a human-facing surface. **Left** judges whether it works and is true; **right** judges whether a person can use it. One reviewer doing both does the first well and the second as an afterthought: the reviewer deep in correctness does not notice a heading breaking mid-word, and the one reading as a person does not notice a record citing data it was forbidden to see. Left writes the spec and delegates the surface; neither reads the other's criteria before writing, or you get agreement instead of a second opinion.
 - **`specialist.md`** — put a domain expert *between* brain and hand when the gap between what the business wants and what the code does is wide enough that the brain would need a glossary. The brain then never sees code, so hat drift becomes structurally impossible rather than a rule someone has to remember.
@@ -203,10 +231,50 @@ Full templates are in `references/prompts.md` — read it when you are about to 
 Boring, and they will bite you:
 
 - **Never run two writing agents on the same file.** They silently clobber each other. Read-only agents can run alongside a writer safely; two hands cannot. Split by file, or run them in sequence.
-- **Commit each accepted increment.** Long-running agents die. Anything uncommitted when one dies is at risk. If the user has not authorised commits, snapshot a patch to the scratchpad instead — then say so.
+- **Commit each accepted increment.** Long-running agents die. Anything uncommitted when one dies
+  is at risk. If the user has not authorised commits, ask early — and until they do, snapshot a
+  patch **inside the project tree, not a temp directory**. On one real run the snapshot was stored
+  beside the board in a scratchpad and the OS reaped both together, which is the worst of both
+  worlds: a backup that dies with the thing it was backing up.
 - **Verify the work survived a death.** When an agent dies mid-task, check the tree before resuming: it may have left scaffolding, a half-finished edit, or a temporary revert it made to capture a "before" state. A half-applied refactor that still compiles is the dangerous case.
-- **Check your own verification commands.** A command that silently does nothing will happily tell you everything is fine — a tool invoked without its subcommand, a grep against a path that moved. If a check returns a suspiciously clean result, confirm it ran the thing you think it ran before you report it.
-- **Cost is real.** Each full round is a build plus an independent verification pass. Use this where correctness matters; don't use it to rename a variable.
+- **Check your own verification commands — mechanically, not attentively.** This is the referee's
+  most common error and it fails in *both* directions. Two rules, every time:
+  **(a) Assert the input was non-empty before trusting an equality.** Comparing two empty outputs
+  returns "identical" and reads as a pass. One real run compared two runs of a CLI flag that did
+  not exist; both produced nothing, the hashes matched, and it was caught only because
+  `e3b0c442...b855` is recognisably the SHA-256 of the empty string.
+  **(b) Prove the check fires.** Plant the violation it is supposed to catch and confirm it
+  catches it. A grep with a typo returns clean forever. In the same run a static ban looked clean
+  until a planted file with the four banned constructs proved the pattern was well-formed.
+  The mirror failure is just as expensive: a sha mismatch reported a canvas as "still animating"
+  when the real difference was **11 antialiased pixels**. A hash tells you two files differ; it
+  does not tell you *what* differed. Localise before you report.
+- **Cost is real, and it is the most common reason a run dies.** A measured two-round run on a
+  two-service greenfield app spent **~1.3M subagent tokens across 10 agents and lost 3 of them to
+  rate limits.** Builders and judges cost about the same, so budget ~2x a plain build, not 1.1x.
+- **Route models by role.** Hands do mechanical work and should run on a cheaper model; judges do
+  the thinking you are paying for and should not. This alone would have prevented every death in
+  the run above. Put the chosen model in the brief so it is visible in the record.
+- **Say the budget out loud.** Add a `Budget:` line to every brief — "stay under one session
+  window; if you are running out, deliver in this priority order and report what is unbuilt."
+  A hand that knows it is near the edge ships a coherent slice; one that does not ships a stump.
+
+## Crucible lite — when the full loop is too much
+
+The full loop is three to four agents a round. Most tasks do not need that, and reaching for it
+anyway is how people conclude this is too expensive to use.
+
+**Lite is: one brain, one hand, one round, no board.** Brief the brain directly, let it write
+criteria, let the hand build, judge once, accept or hand back the blockers. You keep the two
+things that do the actual work — a judge that cannot edit, and criteria written before the build
+— and drop everything that only pays off across rounds.
+
+Scale up when, and only when:
+- **the board** — a round died, or you are going past round two
+- **the hemispheres** — the work has a human-facing surface AND a logical substrate, and getting
+  either wrong is expensive
+- **the seam check** — the work crosses a boundary no single judge owns
+- **the specialist** — the business/code gap is wide enough that the brain would need a glossary
 
 ## When not to use this
 

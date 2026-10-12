@@ -1,7 +1,17 @@
 #!/usr/bin/env bash
 # Scaffold a crucible blackboard — the corpus callosum between the agents.
 #
-#   ./init-board.sh <dir>        # e.g. "$SCRATCHPAD/crucible"
+#   ./init-board.sh              # defaults to ./.crucible in the repo
+#   ./init-board.sh <dir>
+#
+# PUT THE BOARD IN THE REPO. Earlier versions of this skill suggested a session
+# scratchpad; on at least one real run that path was a temp directory, the OS
+# reaped it across a multi-day gap, and it took the entire board — both specs,
+# every acceptance criterion, every ruling — along with the backup that had been
+# helpfully stored beside it. The run survived only because the main session
+# still held its transcript.
+#
+# A board that does not outlive the machine's tmp policy is not a board. Commit it.
 #
 # The board is how the brain, the hand and the referee avoid re-deriving each
 # other's work. Every agent reads it before starting and posts to it before
@@ -10,8 +20,19 @@
 # as much as round one.
 set -euo pipefail
 
+# Default to an in-repo board. Explicit path still wins.
 DIR="${1:-}"
-[ -n "$DIR" ] || { echo "usage: $0 <board-dir>" >&2; exit 1; }
+if [ -z "$DIR" ]; then
+  ROOT="$(git rev-parse --show-toplevel 2>/dev/null || true)"
+  DIR="${ROOT:-$PWD}/.crucible"
+fi
+case "$DIR" in
+  /tmp/*|/private/tmp/*|/var/folders/*)
+    echo "WARNING: $DIR is under a temp directory." >&2
+    echo "  Temp dirs get reaped. A board lost mid-run costs the whole spec phase." >&2
+    echo "  Prefer <repo>/.crucible and commit it." >&2
+    ;;
+esac
 
 if [ -e "$DIR" ] && [ -n "$(ls -A "$DIR" 2>/dev/null)" ]; then
   # Refuse rather than overwrite: a board from an earlier round is the thing
@@ -96,4 +117,5 @@ in its verdict, which is what keeps it judging the job rather than doing QA.
 _empty_"
 
 echo "board ready: $DIR"
+echo "  commit this directory — it is the run's memory, and it must outlive any agent."
 ls -1 "$DIR" | sed 's/^/  /'
