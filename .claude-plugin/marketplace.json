@@ -1,7 +1,7 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "axion-labs",
-  "description": "Workflow plugins for Claude Code \u2014 adversarial review loops and engineering standards.",
+  "description": "Workflow plugins for Claude Code \u2014 adversarial review loops, deliberate practice and engineering standards.",
   "owner": {
     "name": "Axion Labs",
     "email": "shyam.sundhar@voxket.ai"
@@ -15,6 +15,15 @@
       },
       "category": "workflow",
       "source": "./plugins/crucible"
+    },
+    {
+      "name": "whetstone",
+      "description": "A whetstone does not cut; it sharpens the blade that does. A coach that structurally cannot write your code: while a gym session is open, a hook blocks Claude's Edit and Write on everything except the learning log, leaving it questions, a three-rung hint ladder and a read-only examiner that ranks problems without fixing them. Every session records hints used and findings, so you can see whether you are actually getting stronger.",
+      "author": {
+        "name": "Shyam Sundhar Ganesh"
+      },
+      "category": "learning",
+      "source": "./plugins/whetstone"
     }
   ]
 }

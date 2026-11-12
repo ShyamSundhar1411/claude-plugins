@@ -7,6 +7,7 @@ Workflow plugins for [Claude Code](https://claude.com/claude-code).
 ```
 /plugin marketplace add ShyamSundhar1411/claude-plugins
 /plugin install crucible@axion-labs
+/plugin install whetstone@axion-labs
 /reload-plugins
 ```
 
@@ -17,6 +18,7 @@ Run `/plugin` to browse what the marketplace offers.
 | Plugin | What it does |
 | --- | --- |
 | [**crucible**](plugins/crucible) | Splits building from judging across two agents that can each overrule the other, so work is accepted by something that did not build it. |
+| [**whetstone**](plugins/whetstone) | A coach that cannot write your code: a hook blocks Claude's edits during a gym session, so you get questions, graded hints and a review with no fixes. |
 
 ## Repository layout
 
@@ -26,6 +28,11 @@ plugins/
   crucible/
     .claude-plugin/plugin.json    plugin metadata
     skills/crucible/              the skill itself
+    README.md                     full documentation
+  whetstone/
+    .claude-plugin/plugin.json    plugin metadata
+    skills/ agents/ commands/     the coaching rules, the read-only examiner, the commands
+    hooks/ scripts/               the write guard and session ledger
     README.md                     full documentation
 ```
 
