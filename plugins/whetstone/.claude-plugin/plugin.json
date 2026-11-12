@@ -1,0 +1,20 @@
+{
+  "name": "whetstone",
+  "description": "A coach that structurally cannot write your code: while a gym session is open a hook blocks Claude's Edit and Write on everything except the learning log, so the only things it can give you are hints, questions and a review that ranks problems without fixing them",
+  "version": "0.1.0",
+  "author": {
+    "name": "Shyam Sundhar Ganesh",
+    "email": "shyam.sundhar@voxket.ai"
+  },
+  "homepage": "https://github.com/ShyamSundhar1411/claude-plugins",
+  "keywords": [
+    "learning",
+    "coaching",
+    "deliberate-practice",
+    "code-review",
+    "quiz",
+    "mentoring",
+    "socratic",
+    "hooks"
+  ]
+}
