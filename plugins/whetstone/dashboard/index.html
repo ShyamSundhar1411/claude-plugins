@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Whetstone</title>
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%23e0a458'/><path d='M7 21 L25 11' stroke='%23161412' stroke-width='3' stroke-linecap='round'/></svg>" />
+    <script>
+      window.WHETSTONE_TOKEN = "__WHETSTONE_TOKEN__";
+      try {
+        const t = localStorage.getItem("whetstone-theme");
+        if (t) document.documentElement.dataset.theme = t;
+      } catch (e) {}
+    </script>
+  </head>
+  <body>
+    <div class="shell">
+      <aside class="sidebar">
+        <a class="brand" href="#/">
+          <span class="mark"></span>
+          <span>whetstone</span>
+        </a>
+        <nav>
+          <a href="#/" data-route="overview">Overview</a>
+          <a href="#/notes" data-route="notes">Sessions</a>
+          <a href="#/study" data-route="study">Study list <span class="count" id="study-count"></span></a>
+          <a href="#/graph" data-route="graph">Graph</a>
+        </nav>
+        <div class="sidebar-foot">
+          <label class="field">
+            <span>Project</span>
+            <select id="project-filter"><option value="">All projects</option></select>
+          </label>
+          <button id="theme-toggle" class="ghost" type="button">Toggle theme</button>
+          <p class="live"><span class="dot"></span> Live from your log</p>
+        </div>
+      </aside>
+      <main id="view" tabindex="-1"></main>
+    </div>
+    <script src="app.js"></script>
+  </body>
+</html>
