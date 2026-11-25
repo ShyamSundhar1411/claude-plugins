@@ -1,7 +1,7 @@
 {
   "name": "whetstone",
   "description": "A coach that structurally cannot write your code: while a gym session is open a hook blocks Claude's Edit and Write on everything except the learning log, so the only things it can give you are hints, questions and a review that ranks problems without fixing them",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "author": {
     "name": "Shyam Sundhar Ganesh",
     "email": "shyam.sundhar@voxket.ai"
@@ -15,6 +15,7 @@
     "quiz",
     "mentoring",
     "socratic",
-    "hooks"
+    "hooks",
+    "dashboard"
   ]
 }
