@@ -6,6 +6,7 @@
 #   session.sh status                print the open session, or "none"
 #   session.sh stop <red> <yellow>   close it, append a ledger row, print the summary
 #   session.sh stats                 print the ledger and the trend in red findings
+#   session.sh register              add this project to ~/.whetstone/projects for /whet-dash
 set -eu
 
 root="${CLAUDE_PROJECT_DIR:-$PWD}"
@@ -16,6 +17,13 @@ cmd="${1:-status}"; shift || true
 
 get() { sed -n "s/^$1=//p" "$lock" | head -n 1; }
 
+# /whet-dash reads every project listed here.
+register() {
+  mkdir -p "$HOME/.whetstone"
+  touch "$HOME/.whetstone/projects"
+  grep -qxF "$root" "$HOME/.whetstone/projects" || echo "$root" >> "$HOME/.whetstone/projects"
+}
+
 case "$cmd" in
   start)
     topic="$*"
@@ -23,6 +31,7 @@ case "$cmd" in
     if [ -f "$lock" ]; then echo "already open: $(get topic). Close it with /whet-done first." >&2; exit 1; fi
     mkdir -p "$dir/sessions"
     printf 'topic=%s\nstarted=%s\nhints=0\n' "$topic" "$(date +%s)" > "$lock"
+    register
     echo "gym session open: $topic"
     echo "write guard armed: Claude can only write inside .whetstone/ and to the learning log"
     ;;
@@ -51,6 +60,7 @@ case "$cmd" in
     printf '%s\t%s\t%s\t%s\t%s\t%s\n' "$(date +%F)" "$mins" "$hints" "$red" "$yellow" "$topic" >> "$ledger"
     mkdir -p "$dir/sessions"
     mv "$lock" "$dir/sessions/$(date +%Y%m%d-%H%M%S).done"
+    register
     echo "closed: $topic | ${mins} min | hints $hints | red $red | yellow $yellow"
     echo "write guard disarmed"
     ;;
@@ -63,6 +73,10 @@ case "$cmd" in
         h = int(n/2); for (i=1;i<=h;i++) { a+=red[i]; ha+=hints[i] } for (i=h+1;i<=n;i++) { b+=red[i]; hb+=hints[i] }
         printf "\nsessions: %d\nred per session:   first half %.1f -> second half %.1f\nhints per session: first half %.1f -> second half %.1f\n", n, a/h, b/(n-h), ha/h, hb/(n-h)
       }' "$ledger"
+    ;;
+  register)
+    register
+    echo "registered for /whet-dash: $root"
     ;;
   *)
     echo "unknown command: $cmd" >&2; exit 1 ;;
