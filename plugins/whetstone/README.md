@@ -81,7 +81,15 @@ Opens `http://127.0.0.1:4747` in your browser, built from the same files the com
 - **Study list:** everything under "Confused me", "Predicted wrong" and "Next", from every session, in one list you can tick off.
 - **Graph:** sessions linked to their project and to the themes they share, so recurring weak spots stand out.
 
-It updates live when `/whet-done` writes a new entry. Projects are added to `~/.whetstone/projects` when you open a gym session; for a project with older sessions, run `bash plugins/whetstone/scripts/session.sh register` there once.
+It updates live when `/whet-done` writes a new entry.
+
+### Coach
+
+The **Coach** tab runs whetstone without the terminal. Pick a project, then use the buttons (Open gym, Hint, Review my work, Quiz me, Rebuild from memory, Explain AI code, Close session) or just type a reply. Each project keeps its own conversation.
+
+Under the hood the dashboard starts Claude Code headless (`claude -p`) in that project with your existing login, so whetstone's commands and its write guard work exactly as they do in the terminal. It runs with `--permission-mode dontAsk` and a short allow-list: reading files, a few read-only shell commands (`ls`, `cat`, `git log`, `git diff` and similar), whetstone's own `session.sh`, subagents, and writing to `.whetstone/` and your learning log. Anything else is refused instead of prompting, and shows up in the chat as a "blocked" tag. That also means `/whet-review` can read your code but cannot run your tests from here; run those in the terminal.
+
+If one model's usage runs out, switch models with the picker next to the project, or set `WHETSTONE_COACH_MODEL`. Projects are added to `~/.whetstone/projects` when you open a gym session; for a project with older sessions, run `bash plugins/whetstone/scripts/session.sh register` there once.
 
 It is a single Node script with no dependencies. It listens on 127.0.0.1 only, and every request needs a random token issued at launch, so other websites cannot read your logs through it. The only thing it writes is which study items you ticked, in `~/.whetstone/study.json`.
 

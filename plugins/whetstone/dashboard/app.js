@@ -447,6 +447,7 @@ function render() {
   else if (route === "note") renderNote(arg);
   else if (route === "study") renderStudy();
   else if (route === "graph") renderGraph();
+  else if (route === "coach") renderCoach();
   else renderOverview();
 }
 
@@ -465,7 +466,7 @@ async function refresh() {
     state.data = data;
     // Don't yank the graph or a half-typed search out from under the user.
     const route = (location.hash || "#/").split("/")[1];
-    if (route !== "graph" && document.activeElement?.id !== "search") render();
+    if (route !== "graph" && route !== "coach" && document.activeElement?.id !== "search") render();
     else updateCount();
   } catch (e) {
     view.innerHTML = `<div class="empty"><h1>Can't reach the dashboard server</h1><p>Start it again with <code>/whet-dash</code>.</p></div>`;
@@ -485,3 +486,211 @@ document.getElementById("theme-toggle").addEventListener("click", () => {
 window.addEventListener("hashchange", render);
 refresh().then(render);
 setInterval(refresh, 4000);
+
+// ---------------------------------------------------------------- coach
+//
+// Talks to Claude Code through the dashboard server, which runs `claude -p`
+// in the chosen project with whetstone loaded. Each project keeps its own
+// conversation, continued with --resume.
+
+const coach = { project: "", busy: false, abort: null, threads: {}, model: "" };
+try {
+  coach.model = localStorage.getItem("whetstone-coach-model") || "";
+} catch (e) {}
+try {
+  coach.threads = JSON.parse(localStorage.getItem("whetstone-coach") || "{}");
+} catch (e) {}
+const saveThreads = () => {
+  try {
+    // Keep the last 60 messages per project so storage stays small.
+    for (const t of Object.values(coach.threads)) t.messages = t.messages.slice(-60);
+    localStorage.setItem("whetstone-coach", JSON.stringify(coach.threads));
+  } catch (e) {}
+};
+const thread = () => (coach.threads[coach.project] ??= { sessionId: null, messages: [] });
+
+/** Markdown for coach replies: fenced code, headings, lists, paragraphs. */
+function mdBlock(text) {
+  const out = [];
+  const parts = String(text).split(/```[a-zA-Z0-9-]*\n?/);
+  parts.forEach((part, i) => {
+    if (i % 2) return out.push(`<pre>${esc(part.replace(/\n$/, ""))}</pre>`);
+    let list = null;
+    const flush = () => {
+      if (list) out.push(`<${list.tag}>${list.items.map((x) => `<li>${md(x)}</li>`).join("")}</${list.tag}>`);
+      list = null;
+    };
+    for (const para of part.split(/\n{2,}/)) {
+      for (const line of para.split("\n")) {
+        const ul = line.match(/^\s*[-*]\s+(.*)/);
+        const ol = line.match(/^\s*\d+[.)]\s+(.*)/);
+        const h = line.match(/^#{1,4}\s+(.*)/);
+        if (ul || ol) {
+          const tag = ul ? "ul" : "ol";
+          if (!list || list.tag !== tag) { flush(); list = { tag, items: [] }; }
+          list.items.push((ul || ol)[1]);
+        } else if (h) { flush(); out.push(`<h4>${md(h[1])}</h4>`); }
+        else if (line.trim()) { flush(); out.push(`<p>${md(line)}</p>`); }
+      }
+      flush();
+    }
+  });
+  return out.join("");
+}
+
+const ACTIONS = [
+  { label: "Open gym", needs: "What are you going to build or practise?", run: (a) => `/whetstone:whet-gym ${a}`, when: "closed" },
+  { label: "Hint", run: () => "/whetstone:whet-hint", when: "open" },
+  { label: "Review my work", run: () => "/whetstone:whet-review", when: "open" },
+  { label: "Quiz me", needs: "Which file or topic?", run: (a) => `/whetstone:whet-quiz ${a}` },
+  { label: "Rebuild from memory", needs: "Which file?", run: (a) => `/whetstone:whet-rebuild ${a}`, when: "open" },
+  { label: "Explain AI code", run: () => "/whetstone:whet-explain", when: "closed" },
+  { label: "Close session", run: () => "/whetstone:whet-done", when: "open" },
+];
+
+async function renderCoach() {
+  const projects = state.data.projects;
+  if (!projects.length) return renderEmpty();
+  coach.project = coach.project || state.project || projects[0].name;
+  const status = await api(`/api/status?project=${encodeURIComponent(coach.project)}`).catch(() => ({ open: false, available: false }));
+  const t = thread();
+  view.innerHTML = `
+    <div class="coach">
+      <div>
+        <h1>Coach</h1>
+        <p class="lede" style="margin-bottom:0">Run whetstone from here instead of the terminal. The coach works in the selected project, and the same write guard applies: during a gym session it can hint, question and review, never write your code.</p>
+      </div>
+      <div class="coach-bar">
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <select id="coach-model" title="Model the coach runs on">
+            ${[["", "Default model"], ["opus", "Opus"], ["sonnet", "Sonnet"], ["haiku", "Haiku"]].map(([v, l]) => `<option value="${v}" ${v === coach.model ? "selected" : ""}>${l}</option>`).join("")}
+          </select>
+          <select id="coach-project">${projects.map((p) => `<option ${p.name === coach.project ? "selected" : ""}>${esc(p.name)}</option>`).join("")}</select>
+          <span class="status ${status.open ? "open" : ""}">${status.open ? `<span class="dot"></span> Gym open: ${esc(status.topic)} · ${status.minutes} min · ${status.hints} hints` : "No gym session open"}</span>
+        </div>
+        <div class="actions">
+          ${ACTIONS.map((a, i) => `<button class="action" data-action="${i}" ${(a.when === "open" && !status.open) || (a.when === "closed" && status.open) ? "disabled" : ""}>${a.label}</button>`).join("")}
+          <button class="action" id="new-thread" title="Start a fresh conversation">New chat</button>
+        </div>
+      </div>
+      <div class="transcript" id="transcript">${
+        t.messages.map(messageHtml).join("") ||
+        `<p class="empty" style="padding:30px">${status.available === false ? "The <code>claude</code> command was not found, so the coach can't run. Make sure Claude Code is installed and on your PATH." : "Pick an action above, or just ask the coach something."}</p>`
+      }</div>
+      <div>
+        <form class="composer" id="composer">
+          <textarea id="prompt" rows="1" placeholder="Reply to the coach, or type a /whet command" ${coach.busy ? "disabled" : ""}></textarea>
+          <button class="primary" id="send" type="submit">${coach.busy ? "Stop" : "Send"}</button>
+        </form>
+        <p class="hint-line" style="margin-top:6px">Enter to send, Shift+Enter for a new line. Runs Claude Code on your machine with your login.</p>
+      </div>
+    </div>`;
+  const tr = document.getElementById("transcript");
+  tr.scrollTop = tr.scrollHeight;
+  document.getElementById("coach-project").addEventListener("change", (e) => {
+    coach.project = e.target.value;
+    renderCoach();
+  });
+  document.getElementById("coach-model").addEventListener("change", (e) => {
+    coach.model = e.target.value;
+    try { localStorage.setItem("whetstone-coach-model", coach.model); } catch (err) {}
+  });
+  document.getElementById("new-thread").addEventListener("click", () => {
+    coach.threads[coach.project] = { sessionId: null, messages: [] };
+    saveThreads();
+    renderCoach();
+  });
+  view.querySelectorAll("[data-action]").forEach((b) =>
+    b.addEventListener("click", () => {
+      const a = ACTIONS[Number(b.dataset.action)];
+      let arg = "";
+      if (a.needs) {
+        arg = prompt(a.needs);
+        if (!arg) return;
+      }
+      send(a.run(arg.trim()));
+    }),
+  );
+  const box = document.getElementById("prompt");
+  box.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      document.getElementById("composer").requestSubmit();
+    }
+  });
+  box.addEventListener("input", () => {
+    box.style.height = "auto";
+    box.style.height = Math.min(180, box.scrollHeight) + "px";
+  });
+  document.getElementById("composer").addEventListener("submit", (e) => {
+    e.preventDefault();
+    if (coach.busy) return coach.abort?.abort();
+    const text = box.value.trim();
+    if (text) send(text);
+  });
+  if (!coach.busy) box.focus();
+}
+
+function messageHtml(m) {
+  if (m.role === "user") return `<div class="msg user">${esc(m.text)}</div>`;
+  const tools = m.tools?.length ? `<div class="tools">${m.tools.map((x) => `<span class="tool">${esc(x)}</span>`).join("")}</div>` : "";
+  const body = m.text ? mdBlock(m.text) : m.pending ? `<span class="typing"><i></i><i></i><i></i></span>` : "";
+  return `<div class="msg coach ${m.error ? "error" : ""}">${tools}${body}</div>`;
+}
+
+async function send(text) {
+  const t = thread();
+  t.messages.push({ role: "user", text });
+  const reply = { role: "coach", text: "", tools: [], pending: true };
+  t.messages.push(reply);
+  coach.busy = true;
+  coach.abort = new AbortController();
+  renderCoach();
+  const repaint = () => {
+    const tr = document.getElementById("transcript");
+    if (!tr || (location.hash || "#/").split("/")[1] !== "coach") return;
+    const nearBottom = tr.scrollHeight - tr.scrollTop - tr.clientHeight < 80;
+    tr.lastElementChild.outerHTML = messageHtml(reply);
+    if (nearBottom) tr.scrollTop = tr.scrollHeight;
+  };
+  try {
+    const res = await fetch("/api/coach", {
+      method: "POST",
+      signal: coach.abort.signal,
+      headers: { "x-whetstone-token": window.WHETSTONE_TOKEN, "content-type": "application/json" },
+      body: JSON.stringify({ project: coach.project, prompt: text, sessionId: t.sessionId, model: coach.model }),
+    });
+    if (!res.ok || !res.body) throw new Error((await res.json().catch(() => ({}))).error || `HTTP ${res.status}`);
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+    for (;;) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      let nl;
+      while ((nl = buffer.indexOf("\n")) >= 0) {
+        const line = buffer.slice(0, nl).trim();
+        buffer = buffer.slice(nl + 1);
+        if (!line) continue;
+        const ev = JSON.parse(line);
+        if (ev.type === "text") reply.text += ev.text;
+        else if (ev.type === "tool") reply.tools.push(ev.label);
+        else if (ev.type === "session") t.sessionId = ev.sessionId;
+        else if (ev.type === "error") { reply.error = true; reply.text += (reply.text ? "\n\n" : "") + ev.message; }
+        repaint();
+      }
+    }
+  } catch (e) {
+    if (e.name !== "AbortError") {
+      reply.error = true;
+      reply.text = reply.text || `Couldn't reach the coach: ${e.message}`;
+    } else reply.text += reply.text ? "\n\n_(stopped)_" : "(stopped)";
+  } finally {
+    reply.pending = false;
+    coach.busy = false;
+    saveThreads();
+    if ((location.hash || "#/").split("/")[1] === "coach") renderCoach();
+    refresh();
+  }
+}

@@ -12,7 +12,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import crypto from "node:crypto";
-import { execFile } from "node:child_process";
+import { execFile, spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -166,6 +166,165 @@ const setStudyDone = (itemId, isDone) => {
   fs.writeFileSync(file, JSON.stringify({ ...state, done: [...done] }, null, 2));
 };
 
+/** The open gym session in a project, read straight from gym.lock. */
+const gymStatus = (root) => {
+  const lock = read(path.join(root, ".whetstone", "gym.lock"));
+  if (!lock) return { open: false };
+  const get = (k) => (lock.match(new RegExp(`^${k}=(.*)$`, "m")) || [])[1] ?? "";
+  return {
+    open: true,
+    topic: get("topic"),
+    hints: Number(get("hints")) || 0,
+    minutes: Math.floor((Date.now() / 1000 - Number(get("started"))) / 60) || 0,
+  };
+};
+
+// Whether the `claude` CLI is on PATH, checked once at launch.
+let claudeAvailable = false;
+execFile("claude", ["--version"], (err) => (claudeAvailable = !err));
+
+/** Only registered projects may be used as a working directory. */
+const projectByName = (name) => projectRoots().find((root) => path.basename(root) === name);
+
+// ---------------------------------------------------------------- coach
+//
+// The Coach view drives headless Claude Code (`claude -p`) in a registered
+// project, with whetstone loaded so its commands and write guard apply. The
+// allow-list is read-only tools plus whetstone's own state: everything else is
+// refused without prompting (--permission-mode dontAsk).
+
+const pluginRoot = process.env.CLAUDE_PLUGIN_ROOT || path.join(here, "..");
+const running = new Map();
+
+/** Headless mode needs plugin commands namespaced: /whet-quiz -> /whetstone:whet-quiz. */
+const namespaced = (prompt) => prompt.replace(/^\/(whet-[a-z]+)\b/, "/whetstone:$1");
+
+const allowedTools = (root) => {
+  const script = path.join(pluginRoot, "scripts", "session.sh");
+  const log = sharedLogPath() || path.join(root, ".whetstone", "log.md");
+  const state = path.join(root, ".whetstone");
+  // "//" anchors a rule at the filesystem root.
+  return [
+    "Read",
+    "Grep",
+    "Glob",
+    "Agent",
+    // Read-only shell commands the coach uses to look around the project.
+    ...["ls", "cat", "head", "tail", "wc", "git status", "git diff", "git log", "git show"].map((c) => `Bash(${c} *)`),
+    `Bash(bash "${script}" *)`,
+    `Bash(bash ${script} *)`,
+    `Edit(/${log})`,
+    `Write(/${log})`,
+    `Edit(/${state}/**)`,
+    `Write(/${state}/**)`,
+  ];
+};
+
+const toolLabel = (block) => {
+  const input = block.input ?? {};
+  const short = (s, n = 60) => (s.length > n ? s.slice(0, n - 1) + "…" : s);
+  if (input.file_path) return `${block.name} ${path.basename(input.file_path)}`;
+  if (input.pattern) return `${block.name} ${short(input.pattern, 40)}`;
+  if (input.command) return `${block.name}: ${short(input.command.replace(pluginRoot, "<whetstone>"))}`;
+  if (input.description) return `${block.name}: ${short(input.description)}`;
+  return block.name;
+};
+
+const runCoach = (req, res, body) => {
+  const root = projectByName(String(body.project ?? ""));
+  const prompt = String(body.prompt ?? "").trim();
+  if (!root) return json(res, 404, { error: "unknown project" });
+  if (!prompt) return json(res, 400, { error: "prompt required" });
+  if (!claudeAvailable) return json(res, 503, { error: "the claude command was not found on PATH" });
+  if (running.has(root)) return json(res, 409, { error: "the coach is still answering in this project" });
+
+  const args = ["-p", "--output-format", "stream-json", "--verbose", "--include-partial-messages", "--permission-mode", "dontAsk", "--permission-prompts", "none"];
+  if (typeof body.sessionId === "string" && /^[0-9a-f-]{16,64}$/i.test(body.sessionId)) args.push("--resume", body.sessionId);
+  // Optional model: an alias like "sonnet" or a full model id. Empty means Claude Code's default.
+  const model = String(body.model || process.env.WHETSTONE_COACH_MODEL || "");
+  if (/^[a-z0-9.\-\[\]]{2,64}$/i.test(model)) args.push("--model", model);
+  args.push("--allowedTools", ...allowedTools(root));
+
+  // A dashboard started from inside Claude Code inherits its environment; the
+  // child should start as a fresh, top-level session.
+  const env = { ...process.env };
+  for (const key of ["CLAUDECODE", "CLAUDE_CODE_ENTRYPOINT", "CLAUDE_PROJECT_DIR", "CLAUDE_PLUGIN_ROOT"]) delete env[key];
+  const child = spawn("claude", args, { cwd: root, env });
+  running.set(root, child);
+  child.stdin.end(namespaced(prompt));
+
+  res.writeHead(200, { "content-type": "application/x-ndjson", "cache-control": "no-store", "x-accel-buffering": "no" });
+  const emit = (event) => res.write(JSON.stringify(event) + "\n");
+  let buffer = "";
+  let stderr = "";
+  let streamed = false;
+  let wroteText = false;
+  let finished = false;
+
+  const handle = (ev) => {
+    // Only the main conversation: subagents (the examiner) report back through it.
+    if (ev.parent_tool_use_id) return;
+    if (ev.type === "system" && ev.subtype === "init") {
+      emit({ type: "session", sessionId: ev.session_id });
+      if (!(ev.plugins ?? []).some((p) => p.name === "whetstone"))
+        emit({ type: "error", message: "whetstone isn't enabled for Claude Code in this project, so its commands and guard won't run. Install or enable the plugin, then try again." });
+    } else if (ev.type === "stream_event") {
+      const e = ev.event ?? {};
+      if (e.type === "content_block_start" && e.content_block?.type === "text" && wroteText) emit({ type: "text", text: "\n\n" });
+      if (e.type === "content_block_delta" && e.delta?.type === "text_delta") {
+        streamed = true;
+        wroteText = true;
+        emit({ type: "text", text: e.delta.text });
+      }
+    } else if (ev.type === "assistant") {
+      for (const block of ev.message?.content ?? []) {
+        if (block.type === "tool_use") emit({ type: "tool", label: toolLabel(block) });
+        // Fallback if partial messages aren't streamed.
+        if (block.type === "text" && !streamed) {
+          emit({ type: "text", text: (wroteText ? "\n\n" : "") + block.text });
+          wroteText = true;
+        }
+      }
+    } else if (ev.type === "system" && ev.subtype === "permission_denied") {
+      emit({ type: "tool", label: `blocked: ${ev.tool_name ?? "tool"}` });
+    } else if (ev.type === "result") {
+      finished = true;
+      emit({ type: "session", sessionId: ev.session_id });
+      if (ev.is_error) emit({ type: "error", message: (ev.errors ?? [ev.result ?? "The run ended with an error."]).join("\n") });
+      else if (!wroteText && ev.result) emit({ type: "text", text: ev.result });
+    }
+  };
+
+  child.stdout.on("data", (chunk) => {
+    buffer += chunk;
+    let nl;
+    while ((nl = buffer.indexOf("\n")) >= 0) {
+      const line = buffer.slice(0, nl).trim();
+      buffer = buffer.slice(nl + 1);
+      if (!line) continue;
+      try {
+        handle(JSON.parse(line));
+      } catch {
+        // Not JSON (a warning line); ignore it.
+      }
+    }
+  });
+  child.stderr.on("data", (chunk) => (stderr = (stderr + chunk).slice(-2000)));
+  child.on("error", (err) => {
+    emit({ type: "error", message: `Couldn't start claude: ${err.message}` });
+  });
+  child.on("close", (code) => {
+    running.delete(root);
+    if (!finished && code !== 0 && code !== null)
+      emit({ type: "error", message: `claude exited with code ${code}${stderr.trim() ? `: ${stderr.trim().split("\n").slice(-3).join(" ")}` : ""}` });
+    res.end();
+  });
+  // Browser stopped or navigated away: SIGINT lets Claude end the turn cleanly.
+  res.on("close", () => {
+    if (child.exitCode === null) child.kill("SIGINT");
+  });
+};
+
 const TYPES = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml" };
 
 const json = (res, status, body) => {
@@ -194,6 +353,12 @@ const server = http.createServer(async (req, res) => {
     const sameOrigin = !origin || origin === `http://127.0.0.1:${port}` || origin === `http://localhost:${port}`;
     if (req.headers["x-whetstone-token"] !== token || !sameOrigin) return json(res, 403, { error: "forbidden" });
     if (url.pathname === "/api/data" && req.method === "GET") return json(res, 200, collect());
+    if (url.pathname === "/api/status" && req.method === "GET") {
+      const root = projectByName(url.searchParams.get("project") ?? "");
+      if (!root) return json(res, 404, { error: "unknown project" });
+      return json(res, 200, { ...gymStatus(root), available: claudeAvailable });
+    }
+    if (url.pathname === "/api/coach" && req.method === "POST") return runCoach(req, res, await readBody(req));
     if (url.pathname === "/api/study" && req.method === "POST") {
       const body = await readBody(req);
       if (typeof body.id !== "string") return json(res, 400, { error: "id required" });
